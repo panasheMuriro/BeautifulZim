@@ -72,4 +72,4 @@ Make it sound like you're talking to a friend. Feel free to reminisce, share jok
   console.log(`✅ Blog for ${today} uploaded to Firebase`);
 }
 
-generateBlog();
+// generateBlog();
