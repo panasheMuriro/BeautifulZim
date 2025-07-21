@@ -1,12 +1,20 @@
 import fetch from "node-fetch";
 import { config } from "dotenv";
 import admin from "firebase-admin";
-import { readFileSync } from "fs";
+
 config();
 
-// 🟡 Initialize Firebase
-const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
-const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, "utf-8"));
+let serviceAccount;
+
+try {
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+    throw new Error("Missing FIREBASE_SERVICE_ACCOUNT_JSON env variable");
+  }
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+} catch (error) {
+  console.error("Failed to parse Firebase service account JSON from env:", error);
+  process.exit(1);
+}
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -19,6 +27,7 @@ const db = admin.firestore();
 export async function generateBlog() {
   const today = new Date().toISOString().split("T")[0];
   const timestamp = new Date().toISOString();
+
   const prompt = `
 You're a Zimbabwean content creator called Vimbai. Today is ${today}. Write a blog post celebrating the beauty of Zimbabwe — the people, places, language, nature, culture, zvese.
 
@@ -58,7 +67,6 @@ Make it sound like you're talking to a friend. Feel free to reminisce, share jok
 
   const content = res?.choices?.[0]?.message?.content || "No response.";
 
-  // ✅ Save to Firebase
   const doc = {
     author: "Vimbai",
     date: today,
@@ -72,4 +80,7 @@ Make it sound like you're talking to a friend. Feel free to reminisce, share jok
   console.log(`✅ Blog for ${today} uploaded to Firebase`);
 }
 
-// generateBlog();
+generateBlog().catch((err) => {
+  console.error("❌ Error generating blog:", err);
+  process.exit(1);
+});
